@@ -1,5 +1,10 @@
 import { type NextPage } from "next";
-import { signIn, useSession } from "next-auth/react";
+import {
+  GetSessionParams,
+  getSession,
+  signIn,
+  useSession,
+} from "next-auth/react";
 
 const Home: NextPage = () => {
   const { data: session } = useSession();
@@ -22,3 +27,24 @@ const Home: NextPage = () => {
 };
 
 export default Home;
+
+export const getServerSideProps = async (
+  context: GetSessionParams | undefined
+) => {
+  const session = await getSession(context);
+
+  if (session) {
+    return {
+      redirect: {
+        destination: "/rooms",
+        permanent: false,
+      },
+    };
+  }
+
+  return {
+    props: {
+      session,
+    },
+  };
+};

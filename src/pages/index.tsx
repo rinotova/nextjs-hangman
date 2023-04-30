@@ -12,6 +12,7 @@ const Home: NextPage = () => {
   const signInHandler = () => {
     void signIn("google");
   };
+  console.log(session);
   return (
     <div className="justify-cente flex min-h-screen w-full flex-col items-center justify-center">
       <BirdsFlying />

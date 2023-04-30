@@ -1,10 +1,11 @@
 import { type NextPage } from "next";
 import {
-  GetSessionParams,
+  type GetSessionParams,
   getSession,
   signIn,
   useSession,
 } from "next-auth/react";
+import BirdsFlying from "~/components/BirdsFlying";
 
 const Home: NextPage = () => {
   const { data: session } = useSession();
@@ -12,8 +13,11 @@ const Home: NextPage = () => {
     void signIn("google");
   };
   return (
-    <div>
-      <h1>Hello world</h1>
+    <div className="justify-cente flex min-h-screen w-full flex-col items-center justify-center">
+      <BirdsFlying />
+      <h1 className="font-butcher text-5xl text-slate-300 opacity-50">
+        The Hangman
+      </h1>
       {!session && (
         <button
           onClick={signInHandler}
@@ -33,14 +37,14 @@ export const getServerSideProps = async (
 ) => {
   const session = await getSession(context);
 
-  if (session) {
+  /*   if (session) {
     return {
       redirect: {
         destination: "/rooms",
         permanent: false,
       },
     };
-  }
+  } */
 
   return {
     props: {

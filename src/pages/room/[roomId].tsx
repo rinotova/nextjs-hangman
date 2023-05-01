@@ -4,7 +4,7 @@ import { type GetSessionParams, getSession } from "next-auth/react";
 const Room: NextPage = () => {
   return (
     <div>
-      <h1>Room A</h1>
+      <h1 className="text-white">Room A</h1>
     </div>
   );
 };

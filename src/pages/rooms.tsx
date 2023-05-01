@@ -1,10 +1,13 @@
 import { type NextPage } from "next";
 import { type GetSessionParams, getSession } from "next-auth/react";
+import BirdsContainer from "~/components/BirdsContainer";
+import Headline from "~/components/Headline";
 
 const Rooms: NextPage = () => {
   return (
     <div>
-      <h1>Rooms</h1>
+      <BirdsContainer />
+      <Headline title="Rooms" />
     </div>
   );
 };

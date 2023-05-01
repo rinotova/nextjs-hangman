@@ -5,17 +5,17 @@ import {
   signIn,
   useSession,
 } from "next-auth/react";
-import BirdsFlying from "~/components/BirdsFlying";
+import BirdsContainer from "~/components/BirdsContainer";
 
 const Home: NextPage = () => {
   const { data: session } = useSession();
   const signInHandler = () => {
     void signIn("google");
   };
-  console.log(session);
+
   return (
-    <div className="justify-cente flex min-h-screen w-full flex-col items-center justify-center">
-      <BirdsFlying />
+    <div className=" justify-cente flex min-h-screen w-full flex-col items-center justify-center">
+      <BirdsContainer isSplashPage={true} />
       <h1 className="font-butcher text-5xl text-slate-300 opacity-50">
         The Hangman
       </h1>
@@ -38,14 +38,14 @@ export const getServerSideProps = async (
 ) => {
   const session = await getSession(context);
 
-  /*   if (session) {
+  if (session) {
     return {
       redirect: {
         destination: "/rooms",
         permanent: false,
       },
     };
-  } */
+  }
 
   return {
     props: {

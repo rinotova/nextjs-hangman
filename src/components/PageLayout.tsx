@@ -8,7 +8,7 @@ const PageLayout = ({ children }: { children: React.ReactNode }) => {
         <meta name="description" content="Hangman - The Game" />
       </Head>
 
-      <div className="mx-auto flex min-h-screen max-w-screen-md flex-col items-center justify-start">
+      <div className="mx-auto flex min-h-screen max-w-screen-md flex-col items-center justify-start p-4">
         {children}
       </div>
     </main>

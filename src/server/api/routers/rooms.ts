@@ -6,7 +6,7 @@ import { RoomSchema } from "~/types/types";
 
 export const roomsRouter = createTRPCRouter({
   createRoom: protectedProcedure
-    .input(RoomSchema)
+    .input(z.object({ wordToGuess: z.string() }))
     .mutation(async ({ ctx, input }) => {
       const { prisma, session } = ctx;
       const { user } = session;
@@ -24,9 +24,14 @@ export const roomsRouter = createTRPCRouter({
       };
     }),
   getAllRooms: protectedProcedure.query(async ({ ctx: { prisma } }) => {
-    const rooms = await prisma.room.findMany();
+    const rooms = await prisma.room.findMany({
+      include: {
+        user: true,
+      },
+    });
 
     return rooms.map((room) => ({
+      username: room.user.userName,
       id: room.id,
       isFull: !!room.player2_ID,
     }));

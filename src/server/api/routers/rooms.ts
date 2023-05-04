@@ -12,6 +12,20 @@ export const roomsRouter = createTRPCRouter({
       const { user } = session;
       const { wordToGuess } = input;
 
+      const userPreviousRoom = await prisma.room.findUnique({
+        where: {
+          player1_ID: user.id,
+        },
+      });
+
+      if (userPreviousRoom) {
+        await prisma.room.delete({
+          where: {
+            id: userPreviousRoom.id,
+          },
+        });
+      }
+
       const room = await prisma.room.create({
         data: {
           player1_ID: user.id,
@@ -28,6 +42,7 @@ export const roomsRouter = createTRPCRouter({
       include: {
         user: true,
       },
+      orderBy: [{ createdAt: "desc" }],
     });
 
     return rooms.map((room) => ({
@@ -41,13 +56,6 @@ export const roomsRouter = createTRPCRouter({
     .mutation(async ({ ctx, input }) => {
       const { prisma } = ctx;
       const { id } = input;
-
-      if (!id) {
-        throw new TRPCError({
-          code: "INTERNAL_SERVER_ERROR",
-          message: "Room not found",
-        });
-      }
 
       const roomUpdateData = { ...input };
       delete roomUpdateData.id;
@@ -75,6 +83,13 @@ export const roomsRouter = createTRPCRouter({
           id: input.roomId,
         },
       });
+
+      if (!room) {
+        throw new TRPCError({
+          code: "INTERNAL_SERVER_ERROR",
+          message: "Room not found",
+        });
+      }
 
       return room;
     }),

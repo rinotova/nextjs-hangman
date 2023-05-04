@@ -17,14 +17,17 @@ function RoomsList() {
   }
 
   return (
-    <div className="mx-auto mt-12 flex w-full max-w-md items-center justify-center p-2">
+    <div className="mx-auto mt-12 flex w-full max-w-md flex-col items-center justify-center">
       {rooms.map((room) => {
         return (
           <div
             key={room.id}
-            className="mb-4 flex w-full items-center justify-between rounded-lg border border-slate-300 p-2 shadow"
+            className="mb-4 flex w-full items-center justify-between rounded-lg  border border-dashed border-slate-600 bg-gray-900 p-2"
           >
-            <p className="text-slate-300">{room.username}</p>
+            <span className="mr-2 rounded bg-green-900 px-2.5 py-0.5 text-sm font-medium text-green-300">
+              {room.username}
+            </span>
+
             {!room.isFull && (
               <Button onClick={() => joinRoom(room.id)}>Join</Button>
             )}

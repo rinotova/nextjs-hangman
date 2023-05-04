@@ -10,7 +10,7 @@ const font = fetch(
 
 async function ogGenerate() {
   const fontData = await font;
-  console.log(fontData);
+
   return new ImageResponse(
     (
       <div

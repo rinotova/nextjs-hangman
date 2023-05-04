@@ -61,6 +61,7 @@ model Room {
     lastAttemptTimestamp DateTime?
     isPlayer_1_Online    Boolean?
     isPlayer_2_Online    Boolean?
+    createdAt            DateTime  @default(now())
 
     @@unique([id, player1_ID])
 }

@@ -62,7 +62,7 @@ export const authOptions: NextAuthOptions = {
   events: {
     async signIn({ user, isNewUser }) {
       if (isNewUser) {
-        let userName = user.name?.toLocaleLowerCase().replace(" ", "");
+        let userName = user.email?.split("@")[0];
         let userNameIsNotUnique;
         if (!userName) {
           userName = makeid(8);

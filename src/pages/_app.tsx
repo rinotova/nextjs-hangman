@@ -1,6 +1,6 @@
 import { type AppType } from "next/app";
 import { type Session } from "next-auth";
-import { Butcherman } from "@next/font/google";
+import { Butcherman } from "next/font/google";
 import { SessionProvider } from "next-auth/react";
 
 import { api } from "~/utils/api";

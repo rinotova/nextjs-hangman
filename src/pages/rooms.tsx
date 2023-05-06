@@ -1,7 +1,7 @@
 import { type NextPage } from "next";
 import { type GetSessionParams, getSession } from "next-auth/react";
 import { useRouter } from "next/router";
-import { type FormEvent, useRef, useState } from "react";
+import { type FormEvent, useState } from "react";
 import BirdsContainer from "~/components/BirdsContainer";
 import Button from "~/components/Button";
 import Headline from "~/components/Headline";
@@ -52,8 +52,12 @@ const Rooms: NextPage = () => {
                     className="block h-12 w-full rounded-lg border border-gray-600 bg-gray-700 p-2 text-center font-butcher text-2xl text-white placeholder-gray-400 focus:border-blue-500 focus:ring-blue-500"
                     placeholder="Type a word..."
                     required
+                    disabled={isSubmittingRoom}
                   />
-                  <Button type="submit" disabled={word.length < 3}>
+                  <Button
+                    type="submit"
+                    disabled={isSubmittingRoom || word.length < 3}
+                  >
                     {isSubmittingRoom ? <LoadingSpinner /> : "Go"}
                   </Button>
                 </>

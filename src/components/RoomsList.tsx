@@ -3,10 +3,11 @@ import Button from "./Button";
 import { api } from "~/utils/api";
 import { useRouter } from "next/router";
 import { useSession } from "next-auth/react";
+import { type Room } from "~/types/types";
 
 function RoomsList() {
   const { data: session } = useSession();
-
+  const userId = session?.user?.id;
   const router = useRouter();
   const { data: rooms, isLoading: roomsLoading } =
     api.rooms.getAllRooms.useQuery();
@@ -21,10 +22,14 @@ function RoomsList() {
       },
     });
 
-  function joinRoomHandler(roomId: string) {
-    if (!isJoiningRoom) {
+  function joinRoomHandler(room: Room) {
+    if (!isJoiningRoom && userId) {
+      if (userId === room.player1_ID || userId === room.player2_ID) {
+        void router.push(`/room/${room.id}`);
+        return;
+      }
       joinRoom({
-        id: roomId,
+        id: room.id,
         updateData: {
           player2_ID: session?.user?.id,
         },
@@ -48,10 +53,10 @@ function RoomsList() {
               {room.username}
             </span>
 
-            {!room.isFull && (
-              <Button onClick={() => joinRoomHandler(room.id)}>Join</Button>
+            {room.canJoin && (
+              <Button onClick={() => joinRoomHandler(room)}>Join</Button>
             )}
-            {room.isFull && <Button disabled={true}>Full</Button>}
+            {!room.canJoin && <Button disabled={true}>Full</Button>}
           </div>
         );
       })}

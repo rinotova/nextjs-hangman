@@ -57,7 +57,7 @@ model Room {
     isGuessed            Boolean?
     user                 User      @relation(fields: [player1_ID], references: [id])
     lastLetter           String?
-    attempts             Int?
+    attempts             Int?      @default(0)
     lastAttemptTimestamp DateTime?
     createdAt            DateTime  @default(now())
 

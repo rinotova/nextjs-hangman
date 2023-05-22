@@ -18,9 +18,6 @@ export const RoomSchema = z.object({
     lastLetter: z.string().optional(),
     attempts: z.number().optional(),
     lastAttemptTimestamp: z.date().optional(),
-    wordToGuess: z
-      .string()
-      .min(3, { message: "Min length for the name is 3 characters" })
-      .optional(),
+    wordToGuess: z.string().optional(),
   }),
 });

@@ -10,7 +10,7 @@ function RoomsList() {
   const userId = session?.user?.id;
   const router = useRouter();
   const { data: rooms, isLoading: roomsLoading } =
-    api.rooms.getAllRooms.useQuery();
+    api.rooms.getAllRooms.useQuery(undefined, { refetchInterval: 1000 });
 
   const { mutate: joinRoom, isLoading: isJoiningRoom } =
     api.rooms.updateRoom.useMutation({

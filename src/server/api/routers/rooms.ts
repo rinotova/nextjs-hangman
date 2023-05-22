@@ -1,4 +1,3 @@
-import { TRPCError } from "@trpc/server";
 import { z } from "zod";
 
 import { createTRPCRouter, protectedProcedure } from "~/server/api/trpc";
@@ -77,13 +76,6 @@ export const roomsRouter = createTRPCRouter({
           id: input.roomId,
         },
       });
-
-      if (!room) {
-        throw new TRPCError({
-          code: "INTERNAL_SERVER_ERROR",
-          message: "Room not found",
-        });
-      }
 
       return room;
     }),

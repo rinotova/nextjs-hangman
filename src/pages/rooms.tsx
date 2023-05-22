@@ -53,6 +53,7 @@ const Rooms: NextPage = () => {
                     placeholder="Type a word..."
                     required
                     disabled={isSubmittingRoom}
+                    minLength={3}
                   />
                   <Button
                     type="submit"

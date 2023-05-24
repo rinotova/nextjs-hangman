@@ -2,6 +2,7 @@ import { type NextPage } from "next";
 import { type GetSessionParams, getSession } from "next-auth/react";
 import { useRouter } from "next/router";
 import { type FormEvent, useState } from "react";
+import { toast } from "react-hot-toast";
 import BirdsContainer from "~/components/BirdsContainer";
 import Button from "~/components/Button";
 import Headline from "~/components/Headline";
@@ -25,8 +26,16 @@ const Rooms: NextPage = () => {
 
   function createRoomHandler(e: FormEvent) {
     e.preventDefault();
+    if (word.indexOf(" ") !== -1) {
+      toast.dismiss();
+      toast.error("Only one word per game.");
+      return;
+    }
     if (!isSubmittingRoom && word.length > 2) {
-      createRoom({ wordToGuess: word });
+      createRoom({
+        wordToGuess: word,
+        currentWordGuess: "_".repeat(word.length),
+      });
     }
   }
   return (

@@ -7,6 +7,7 @@ import { api } from "~/utils/api";
 
 import "~/styles/globals.css";
 import PageLayout from "~/components/PageLayout";
+import { Toaster } from "react-hot-toast";
 
 const butcher = Butcherman({
   weight: "400",
@@ -29,6 +30,7 @@ const MyApp: AppType<{ session: Session | null }> = ({
         `}
       </style>
       <PageLayout>
+        <Toaster position="bottom-center" />
         <Component {...pageProps} />
       </PageLayout>
     </SessionProvider>

@@ -5,16 +5,17 @@ import { RoomSchema } from "~/types/types";
 
 export const roomsRouter = createTRPCRouter({
   createRoom: protectedProcedure
-    .input(z.object({ wordToGuess: z.string() }))
+    .input(z.object({ wordToGuess: z.string(), currentWordGuess: z.string() }))
     .mutation(async ({ ctx, input }) => {
       const { prisma, session } = ctx;
       const { user } = session;
-      const { wordToGuess } = input;
+      const { wordToGuess, currentWordGuess } = input;
 
       const room = await prisma.room.create({
         data: {
           player1_ID: user.id,
-          wordToGuess,
+          wordToGuess: wordToGuess.toUpperCase(),
+          currentWordGuess,
         },
       });
 

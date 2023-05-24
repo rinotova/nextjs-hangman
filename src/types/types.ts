@@ -17,8 +17,8 @@ export const RoomSchema = z.object({
     isGuessed: z.boolean().optional(),
     lastLetter: z.string().optional(),
     attempts: z.number().optional(),
-    lastAttemptTimestamp: z.date().optional(),
+    lastAttemptTimestamp: z.number().optional(),
     wordToGuess: z.string().optional(),
-    currentWordGuess: z.string().optional(),
+    currentWordGuess: z.string().optional().nullable(),
   }),
 });

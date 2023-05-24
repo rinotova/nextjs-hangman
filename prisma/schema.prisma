@@ -50,17 +50,17 @@ model User {
 }
 
 model Room {
-    id                   String    @id @default(cuid()) @map("_id")
-    player1_ID           String    @unique
+    id                   String   @id @default(cuid()) @map("_id")
+    player1_ID           String   @unique
     player2_ID           String?
     wordToGuess          String?
     currentWordGuess     String?
     isGuessed            Boolean?
-    user                 User      @relation(fields: [player1_ID], references: [id])
+    user                 User     @relation(fields: [player1_ID], references: [id])
     lastLetter           String?
-    attempts             Int?      @default(0)
-    lastAttemptTimestamp DateTime?
-    createdAt            DateTime  @default(now())
+    attempts             Int?     @default(0)
+    lastAttemptTimestamp Int?
+    createdAt            DateTime @default(now())
 
     @@unique([id, player1_ID])
 }

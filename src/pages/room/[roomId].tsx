@@ -9,6 +9,7 @@ import { api } from "~/utils/api";
 
 const Room = () => {
   const newWordRef = useRef<HTMLInputElement>(null);
+  const [guessLetter, setGuessLetter] = useState("");
   const { data: session } = useSession();
   const userId = session?.user?.id;
   const router = useRouter();
@@ -38,28 +39,36 @@ const Room = () => {
     }
   );
 
-  const { mutate: editGame, isLoading: isEditingGame } =
-    api.rooms.updateRoom.useMutation();
+  const {
+    mutate: editGame,
+    mutateAsync: asyncEditGame,
+    isLoading: isEditingGame,
+  } = api.rooms.updateRoom.useMutation();
 
-  const [currentWordGuess] = useState(
-    room && room.currentWordGuess ? room.currentWordGuess : ""
-  );
-  if (currentWordGuess && currentWordGuess === room?.wordToGuess) {
-    winGameHandler();
+  if (
+    room &&
+    room.currentWordGuess &&
+    room.wordToGuess &&
+    room.currentWordGuess === room.wordToGuess
+  ) {
+    void winGameHandler();
+    return;
   }
 
-  function winGameHandler() {
+  async function winGameHandler() {
     if (!isEditingGame && room) {
-      editGame({
+      await asyncEditGame({
         id: room.id,
         updateData: {
           isGuessed: true,
           wordToGuess: "",
+          currentWordGuess: "",
           attempts: 0,
           player1_ID: userId,
           player2_ID: room.player1_ID,
         },
       });
+      setGuessLetter("");
     }
   }
 
@@ -81,6 +90,81 @@ const Room = () => {
     }
   }
 
+  async function sendLetter() {
+    if (!isEditingGame && room && guessLetter) {
+      const guessingWord = getGuessingWord();
+
+      if (guessingWord && guessingWord.indexOf("_") === -1) {
+        void winGameHandler();
+        return;
+      }
+
+      await asyncEditGame({
+        id: room.id,
+        updateData: {
+          attempts: room.attempts ? room.attempts + 1 : 1,
+          lastAttemptTimestamp: new Date().getTime(),
+          currentWordGuess: guessingWord || room.currentWordGuess,
+        },
+      });
+      setGuessLetter("");
+    }
+  }
+
+  function sendGuessLetterHandler(e: FormEvent) {
+    e.preventDefault();
+    void sendLetter();
+  }
+
+  function getGuessingWord() {
+    if (!room || !room.currentWordGuess) {
+      return;
+    }
+    let theGuessingWord = room.wordToGuess;
+
+    if (!theGuessingWord) {
+      return;
+    }
+    const indices = getIndicesOf(guessLetter, theGuessingWord);
+    console.log(indices);
+    console.log("The guessing word: ", theGuessingWord);
+
+    if (indices.length === 0) {
+      return;
+    }
+    for (let j = 0; j < indices.length; j++) {
+      theGuessingWord = setCharAt(
+        room.currentWordGuess,
+        Number(indices[j]),
+        guessLetter
+      );
+    }
+    console.log(theGuessingWord);
+    return theGuessingWord;
+  }
+
+  function setCharAt(str: string, index: number, chr: string) {
+    if (index > str.length - 1) return str;
+    return str.substring(0, index) + chr + str.substring(index + 1);
+  }
+
+  function getIndicesOf(searchStr: string, str: string): number[] {
+    const searchStrLen = searchStr.length;
+    if (searchStrLen == 0) {
+      return [];
+    }
+    let startIndex = 0;
+    let index;
+    const indices = [];
+    str = str.toLowerCase();
+    searchStr = searchStr.toLowerCase();
+    while ((index = str.indexOf(searchStr, startIndex)) > -1) {
+      indices.push(index);
+      startIndex = index + searchStrLen;
+    }
+    return indices;
+  }
+
   if (!room && !roomIsLoading) {
     void router.push("/");
     return;
@@ -98,7 +182,6 @@ const Room = () => {
       <Headline title="Hangman" />
 
       <div className="mt-12 flex min-h-[calc(100vh-1rem-120px)] w-full flex-col justify-between gap-6">
-        {/* <Button onClick={winGameHandler}>Win game</Button> */}
         {users?.playerOneUsername && (
           <div className="-mt-5 flex w-full">
             <span className="mr-2 rounded bg-red-900 px-2.5 py-0.5 text-sm font-medium text-red-300">
@@ -133,6 +216,24 @@ const Room = () => {
             </div>
           )}
         </div>
+
+        {!isPlayerOne && (
+          <div className="flex w-full">
+            <form onSubmit={sendGuessLetterHandler}>
+              <input
+                type="text"
+                onChange={(e) => setGuessLetter(e.target.value.toUpperCase())}
+                value={guessLetter}
+                className="block h-12 w-32 rounded-lg border border-gray-600 bg-gray-700 p-2 text-center font-butcher text-2xl text-white placeholder-gray-400 focus:border-blue-500 focus:ring-blue-500"
+                placeholder="Type..."
+                required
+                minLength={1}
+                maxLength={1}
+              />
+              <Button type="submit">Send</Button>
+            </form>
+          </div>
+        )}
 
         {users?.playerTwoUsername && (
           <div className="-mt-5 flex w-full justify-end">

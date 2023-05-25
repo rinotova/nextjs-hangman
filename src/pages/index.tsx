@@ -1,10 +1,5 @@
-import { type NextPage } from "next";
-import {
-  type GetSessionParams,
-  getSession,
-  signIn,
-  useSession,
-} from "next-auth/react";
+import { type GetServerSideProps, type NextPage } from "next";
+import { getSession, signIn, useSession } from "next-auth/react";
 import BirdsContainer from "~/components/BirdsContainer";
 
 const Home: NextPage = () => {
@@ -33,9 +28,7 @@ const Home: NextPage = () => {
 
 export default Home;
 
-export const getServerSideProps = async (
-  context: GetSessionParams | undefined
-) => {
+export const getServerSideProps: GetServerSideProps = async (context) => {
   const session = await getSession(context);
 
   if (session) {

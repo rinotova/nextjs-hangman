@@ -1,4 +1,5 @@
-import { type GetSessionParams, getSession, useSession } from "next-auth/react";
+import { type GetServerSideProps } from "next";
+import { getSession, useSession } from "next-auth/react";
 import { useRouter } from "next/router";
 import { type FormEvent, useRef, useState } from "react";
 import BirdsContainer from "~/components/BirdsContainer";
@@ -24,20 +25,21 @@ const Room = () => {
       { enabled: !!theRoomId, refetchInterval: 1000 }
     );
 
-  const { data: users } = api.users.getUsernamesForRoom.useQuery(
-    {
-      playerOneId: room?.player1_ID,
-      playerTwoId: room?.player2_ID,
-    },
-    {
-      enabled: !!room,
-      refetchOnWindowFocus: false,
-      refetchInterval:
-        userId && room && room.player1_ID === userId && !room.player2_ID
-          ? 1000
-          : 0,
-    }
-  );
+  const { data: users, isLoading: isUsersLoading } =
+    api.users.getUsernamesForRoom.useQuery(
+      {
+        playerOneId: room?.player1_ID,
+        playerTwoId: room?.player2_ID,
+      },
+      {
+        enabled: !!room,
+        refetchOnWindowFocus: false,
+        refetchInterval:
+          userId && room && room.player1_ID === userId && !room.player2_ID
+            ? 1000
+            : 0,
+      }
+    );
 
   const {
     mutate: editGame,
@@ -170,7 +172,7 @@ const Room = () => {
     return;
   }
 
-  if (!room || roomIsLoading) {
+  if (!room || roomIsLoading || !users || isUsersLoading) {
     return <div />;
   }
 
@@ -189,50 +191,65 @@ const Room = () => {
             </span>
           </div>
         )}
-        <div className="text-white">
-          {isPlayerOne && !room.wordToGuess && (
-            <div className="flex flex-col items-center justify-center gap-4">
-              <h1>You have won the game!</h1>
-              <h1>Enter a new word to play again:</h1>
-              <form onSubmit={newGameHandler}>
-                <input
-                  ref={newWordRef}
-                  type="text"
-                  className="block h-12 w-full rounded-lg border border-gray-600 bg-gray-700 p-2 text-center font-butcher text-2xl text-white placeholder-gray-400 focus:border-blue-500 focus:ring-blue-500"
-                  placeholder="Type a word..."
-                  required
-                  minLength={3}
-                />
-                <Button type="submit">Go</Button>
-              </form>
-            </div>
-          )}
 
-          {!isPlayerOne && !room.wordToGuess && (
-            <div className="flex flex-col items-center justify-center gap-4">
-              <h1>The word has been guessed!</h1>
-              <h1>Waiting for the other player to enter a new word</h1>
-              <LoadingSpinner size={48} />
-            </div>
-          )}
+        {isPlayerOne && !room.wordToGuess && (
+          <div className="flex flex-col items-center justify-center gap-4 text-white">
+            <h1>You have won the game!</h1>
+            <h1>Enter a new word to play again:</h1>
+            <form
+              className="flex w-full items-center justify-center gap-3"
+              onSubmit={newGameHandler}
+            >
+              <input
+                ref={newWordRef}
+                type="text"
+                className="block h-12 w-full rounded-lg border border-gray-600 bg-gray-700 p-2 text-center font-butcher text-2xl text-white placeholder-gray-400 focus:border-blue-500 focus:ring-blue-500"
+                placeholder="Type a word..."
+                required
+                disabled={isEditingGame}
+                minLength={3}
+              />
+              <Button disabled={isEditingGame} type="submit">
+                Go
+              </Button>
+            </form>
+          </div>
+        )}
+
+        {!isPlayerOne && !room.wordToGuess && (
+          <div className="flex flex-col items-center justify-center gap-4 text-white">
+            <h1>The word has been guessed!</h1>
+            <h1>Waiting for the other player to enter a new word</h1>
+            <LoadingSpinner size={48} />
+          </div>
+        )}
+
+        <div className="flex w-full justify-center">
+          <h1 className="font-butcher text-4xl tracking-[.3em] text-white">
+            {room.currentWordGuess}
+          </h1>
         </div>
 
         {!isPlayerOne && (
-          <div className="flex w-full">
-            <form onSubmit={sendGuessLetterHandler}>
-              <input
-                type="text"
-                onChange={(e) => setGuessLetter(e.target.value.toUpperCase())}
-                value={guessLetter}
-                className="block h-12 w-32 rounded-lg border border-gray-600 bg-gray-700 p-2 text-center font-butcher text-2xl text-white placeholder-gray-400 focus:border-blue-500 focus:ring-blue-500"
-                placeholder="Type..."
-                required
-                minLength={1}
-                maxLength={1}
-              />
-              <Button type="submit">Send</Button>
-            </form>
-          </div>
+          <form
+            className="flex w-full items-center justify-center gap-3"
+            onSubmit={sendGuessLetterHandler}
+          >
+            <input
+              type="text"
+              onChange={(e) => setGuessLetter(e.target.value.toUpperCase())}
+              value={guessLetter}
+              className="block h-12 w-32 rounded-lg border border-gray-600 bg-gray-700 p-2 text-center font-butcher text-2xl text-white placeholder-gray-400 focus:border-blue-500 focus:ring-blue-500"
+              placeholder="Type..."
+              required
+              minLength={1}
+              maxLength={1}
+              disabled={isEditingGame}
+            />
+            <Button disabled={isEditingGame} type="submit">
+              {isEditingGame ? <LoadingSpinner /> : "↑"}
+            </Button>
+          </form>
         )}
 
         {users?.playerTwoUsername && (
@@ -262,9 +279,7 @@ const Room = () => {
 
 export default Room;
 
-export const getServerSideProps = async (
-  context: GetSessionParams | undefined
-) => {
+export const getServerSideProps: GetServerSideProps = async (context) => {
   const session = await getSession(context);
 
   if (!session) {

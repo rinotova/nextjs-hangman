@@ -1,5 +1,5 @@
-import { type NextPage } from "next";
-import { type GetSessionParams, getSession } from "next-auth/react";
+import { type GetServerSideProps, type NextPage } from "next";
+import { getSession } from "next-auth/react";
 import { useRouter } from "next/router";
 import { type FormEvent, useState } from "react";
 import { toast } from "react-hot-toast";
@@ -83,9 +83,7 @@ const Rooms: NextPage = () => {
 
 export default Rooms;
 
-export const getServerSideProps = async (
-  context: GetSessionParams | undefined
-) => {
+export const getServerSideProps: GetServerSideProps = async (context) => {
   const session = await getSession(context);
 
   if (!session) {

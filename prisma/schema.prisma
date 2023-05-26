@@ -61,6 +61,7 @@ model Room {
     attempts             Int?     @default(0)
     lastAttemptTimestamp Int?
     createdAt            DateTime @default(now())
+    usedLetters          String[] @default([])
 
     @@unique([id, player1_ID])
 }

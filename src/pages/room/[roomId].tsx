@@ -119,6 +119,7 @@ const Room = () => {
           attempts: 0,
           player1_ID: userId,
           player2_ID: room.player1_ID,
+          usedLetters: [],
         },
       });
     }
@@ -140,6 +141,7 @@ const Room = () => {
           isGuessed: false,
           wordToGuess: newWord,
           currentWordGuess: "_".repeat(newWord.length),
+          usedLetters: [],
         },
       });
     }
@@ -160,6 +162,10 @@ const Room = () => {
           attempts: room.attempts ? room.attempts + 1 : 1,
           lastAttemptTimestamp: new Date().getTime(),
           currentWordGuess: currentGuessingWord || room.currentWordGuess,
+          usedLetters:
+            room.usedLetters.indexOf(guessLetter) === -1
+              ? [...room.usedLetters, guessLetter]
+              : room.usedLetters,
         },
       });
     }
@@ -177,6 +183,12 @@ const Room = () => {
     let theGuessingWord = room.wordToGuess;
 
     if (!theGuessingWord) {
+      return;
+    }
+
+    if (room.usedLetters.indexOf(guessLetter) !== -1) {
+      toast.dismiss();
+      toast.success("Letter already used!");
       return;
     }
     const indices = getIndicesOf(guessLetter, theGuessingWord);

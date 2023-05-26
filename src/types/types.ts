@@ -20,5 +20,6 @@ export const RoomSchema = z.object({
     lastAttemptTimestamp: z.number().optional(),
     wordToGuess: z.string().optional(),
     currentWordGuess: z.string().optional().nullable(),
+    usedLetters: z.string().array().optional(),
   }),
 });

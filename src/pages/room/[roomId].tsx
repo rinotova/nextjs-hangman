@@ -7,11 +7,10 @@ import BirdsContainer from "~/components/BirdsContainer";
 import Button from "~/components/Button";
 import Headline from "~/components/Headline";
 import { LoadingSpinner } from "~/components/Spinner";
-import { prisma } from "~/server/db";
 import { type RoomData } from "~/types/types";
 import { api } from "~/utils/api";
 
-const Room = ({ isPlayerTwo }: { isPlayerTwo: boolean }) => {
+const Room = () => {
   const newWordRef = useRef<HTMLInputElement>(null);
   const [guessLetter, setGuessLetter] = useState("");
   const { data: session } = useSession();
@@ -26,7 +25,10 @@ const Room = ({ isPlayerTwo }: { isPlayerTwo: boolean }) => {
       {
         roomId: theRoomId,
       },
-      { enabled: !!theRoomId, refetchInterval: isPlayerTwo ? 0 : 1000 }
+      {
+        enabled: !!theRoomId,
+        refetchInterval: 1000,
+      }
     );
 
   const { data: users, isLoading: isUsersLoading } =
@@ -333,15 +335,8 @@ export default Room;
 
 export const getServerSideProps: GetServerSideProps = async (context) => {
   const session = await getSession(context);
-  const roomId = context.params?.roomId;
-  if (typeof roomId !== "string") throw new Error("no room id");
-  const theRoom = await prisma.room.findUnique({
-    where: {
-      id: roomId,
-    },
-  });
 
-  if (!session || !theRoom) {
+  if (!session) {
     return {
       redirect: {
         destination: "/",
@@ -350,13 +345,9 @@ export const getServerSideProps: GetServerSideProps = async (context) => {
     };
   }
 
-  const isPlayerTwo =
-    theRoom.player2_ID && session.user?.id === theRoom.player2_ID;
-
   return {
     props: {
       session,
-      isPlayerTwo,
     },
   };
 };

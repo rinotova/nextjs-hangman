@@ -2,10 +2,12 @@ import { type GetServerSideProps } from "next";
 import { getSession, useSession } from "next-auth/react";
 import { useRouter } from "next/router";
 import { type FormEvent, useRef, useState } from "react";
+import { toast } from "react-hot-toast";
 import BirdsContainer from "~/components/BirdsContainer";
 import Button from "~/components/Button";
 import Headline from "~/components/Headline";
 import { LoadingSpinner } from "~/components/Spinner";
+import { type RoomData } from "~/types/types";
 import { api } from "~/utils/api";
 
 const Room = () => {
@@ -16,6 +18,7 @@ const Room = () => {
   const router = useRouter();
   const { roomId } = router.query;
   const theRoomId = roomId as string;
+  const trpcUtils = api.useContext();
 
   const { data: room, isLoading: roomIsLoading } =
     api.rooms.getRoomData.useQuery(
@@ -45,7 +48,54 @@ const Room = () => {
     mutate: editGame,
     mutateAsync: asyncEditGame,
     isLoading: isEditingGame,
-  } = api.rooms.updateRoom.useMutation();
+  } = api.rooms.updateRoom.useMutation({
+    onMutate: async ({ updateData }) => {
+      if (!room || !updateData.currentWordGuess) {
+        return;
+      }
+      const optimisticCurrentWordGuess = updateData.currentWordGuess || null;
+      const optimisticAttempts = updateData.attempts || null;
+      const optimisticLastAttemptTimestamp =
+        updateData.lastAttemptTimestamp || null;
+      // Cancel any outgoing refetches so they don't overwrite our optimistic update.
+      await trpcUtils.rooms.getRoomData.cancel();
+
+      // Snapshot of the previous value
+      const previousRoomData = trpcUtils.rooms.getRoomData.getData({
+        roomId: room?.id,
+      });
+
+      // Optimistically update to the new value
+      trpcUtils.rooms.getRoomData.setData({ roomId: room?.id }, (prev) => {
+        const optimisticRoomData: RoomData = {
+          ...room,
+          attempts: optimisticAttempts,
+          lastAttemptTimestamp: optimisticLastAttemptTimestamp,
+          currentWordGuess: optimisticCurrentWordGuess,
+        };
+        if (!prev) {
+          return optimisticRoomData;
+        }
+        return optimisticRoomData;
+      });
+      return { previousRoomData };
+    },
+    onError: (err, updatedRoom, context) => {
+      toast.dismiss();
+      toast.error(err.message);
+      if (!room) {
+        void trpcUtils.rooms.getRoomData.invalidate();
+        return;
+      }
+      trpcUtils.rooms.getRoomData.setData(
+        { roomId: room?.id },
+        () => context?.previousRoomData
+      );
+    },
+    onSettled: () => {
+      void trpcUtils.rooms.getRoomData.invalidate();
+    },
+  });
 
   if (
     room &&
@@ -76,17 +126,20 @@ const Room = () => {
 
   function newGameHandler(e: FormEvent) {
     e.preventDefault();
-    if (
-      !isEditingGame &&
-      room &&
-      newWordRef.current &&
-      newWordRef.current.value.length > 2
-    ) {
+    const newWord = newWordRef.current?.value;
+    if (!isEditingGame && room && newWord && newWord.length > 2) {
+      if (newWord.indexOf(" ") !== -1) {
+        toast.dismiss();
+        toast.error("Only one word per game.");
+        return;
+      }
+
       editGame({
         id: room.id,
         updateData: {
           isGuessed: false,
-          wordToGuess: newWordRef.current.value,
+          wordToGuess: newWord,
+          currentWordGuess: "_".repeat(newWord.length),
         },
       });
     }
@@ -94,9 +147,9 @@ const Room = () => {
 
   async function sendLetter() {
     if (!isEditingGame && room && guessLetter) {
-      const guessingWord = getGuessingWord();
+      const currentGuessingWord = getGuessingWord() || null;
 
-      if (guessingWord && guessingWord.indexOf("_") === -1) {
+      if (currentGuessingWord && currentGuessingWord.indexOf("_") === -1) {
         void winGameHandler();
         return;
       }
@@ -106,7 +159,7 @@ const Room = () => {
         updateData: {
           attempts: room.attempts ? room.attempts + 1 : 1,
           lastAttemptTimestamp: new Date().getTime(),
-          currentWordGuess: guessingWord || room.currentWordGuess,
+          currentWordGuess: currentGuessingWord || room.currentWordGuess,
         },
       });
       setGuessLetter("");
@@ -192,37 +245,39 @@ const Room = () => {
           </div>
         )}
 
-        {isPlayerOne && !room.wordToGuess && (
-          <div className="flex flex-col items-center justify-center gap-4 text-white">
-            <h1>You have won the game!</h1>
-            <h1>Enter a new word to play again:</h1>
-            <form
-              className="flex w-full items-center justify-center gap-3"
-              onSubmit={newGameHandler}
-            >
-              <input
-                ref={newWordRef}
-                type="text"
-                className="block h-12 w-full rounded-lg border border-gray-600 bg-gray-700 p-2 text-center font-butcher text-2xl text-white placeholder-gray-400 focus:border-blue-500 focus:ring-blue-500"
-                placeholder="Type a word..."
-                required
-                disabled={isEditingGame}
-                minLength={3}
-              />
-              <Button disabled={isEditingGame} type="submit">
-                Go
-              </Button>
-            </form>
-          </div>
-        )}
+        <div className="flex w-full grow items-center justify-center bg-slate-200">
+          {isPlayerOne && !room.wordToGuess && (
+            <div className="flex flex-col items-center justify-center gap-4 text-white">
+              <h1>You have won the game!</h1>
+              <h1>Enter a new word to play again:</h1>
+              <form
+                className="flex w-full items-center justify-center gap-3"
+                onSubmit={newGameHandler}
+              >
+                <input
+                  ref={newWordRef}
+                  type="text"
+                  className="block h-12 w-full rounded-lg border border-gray-600 bg-gray-700 p-2 text-center font-butcher text-2xl text-white placeholder-gray-400 focus:border-blue-500 focus:ring-blue-500"
+                  placeholder="Type a word..."
+                  required
+                  disabled={isEditingGame}
+                  minLength={3}
+                />
+                <Button disabled={isEditingGame} type="submit">
+                  Go
+                </Button>
+              </form>
+            </div>
+          )}
 
-        {!isPlayerOne && !room.wordToGuess && (
-          <div className="flex flex-col items-center justify-center gap-4 text-white">
-            <h1>The word has been guessed!</h1>
-            <h1>Waiting for the other player to enter a new word</h1>
-            <LoadingSpinner size={48} />
-          </div>
-        )}
+          {!isPlayerOne && !room.wordToGuess && (
+            <div className="flex flex-col items-center justify-center gap-4">
+              <h1>The word has been guessed!</h1>
+              <h1>Waiting for the other player to enter a new word</h1>
+              <LoadingSpinner size={48} />
+            </div>
+          )}
+        </div>
 
         <div className="flex w-full justify-center">
           <h1 className="font-butcher text-4xl tracking-[.3em] text-white">
@@ -232,7 +287,7 @@ const Room = () => {
 
         {!isPlayerOne && (
           <form
-            className="flex w-full items-center justify-center gap-3"
+            className="mb-3 flex w-full items-center justify-center gap-3"
             onSubmit={sendGuessLetterHandler}
           >
             <input

@@ -4,6 +4,7 @@ import { api } from "~/utils/api";
 import { useRouter } from "next/router";
 import { useSession } from "next-auth/react";
 import { type Room } from "~/types/types";
+import { toast } from "react-hot-toast";
 
 function RoomsList() {
   const { data: session } = useSession();
@@ -18,7 +19,8 @@ function RoomsList() {
         void router.push(`/room/${id}`);
       },
       onError: () => {
-        // Show toast error
+        toast.dismiss();
+        toast.error("There was an error please try again");
       },
     });
 

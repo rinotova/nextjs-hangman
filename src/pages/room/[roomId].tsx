@@ -7,10 +7,11 @@ import BirdsContainer from "~/components/BirdsContainer";
 import Button from "~/components/Button";
 import Headline from "~/components/Headline";
 import { LoadingSpinner } from "~/components/Spinner";
+import { prisma } from "~/server/db";
 import { type RoomData } from "~/types/types";
 import { api } from "~/utils/api";
 
-const Room = () => {
+const Room = ({ isPlayerTwo }: { isPlayerTwo: boolean }) => {
   const newWordRef = useRef<HTMLInputElement>(null);
   const [guessLetter, setGuessLetter] = useState("");
   const { data: session } = useSession();
@@ -25,7 +26,7 @@ const Room = () => {
       {
         roomId: theRoomId,
       },
-      { enabled: !!theRoomId, refetchInterval: 1000 }
+      { enabled: !!theRoomId, refetchInterval: isPlayerTwo ? 0 : 1000 }
     );
 
   const { data: users, isLoading: isUsersLoading } =
@@ -44,58 +45,56 @@ const Room = () => {
       }
     );
 
-  const {
-    mutate: editGame,
-    mutateAsync: asyncEditGame,
-    isLoading: isEditingGame,
-  } = api.rooms.updateRoom.useMutation({
-    onMutate: async ({ updateData }) => {
-      if (!room || !updateData.currentWordGuess) {
-        return;
-      }
-      const optimisticCurrentWordGuess = updateData.currentWordGuess || null;
-      const optimisticAttempts = updateData.attempts || null;
-      const optimisticLastAttemptTimestamp =
-        updateData.lastAttemptTimestamp || null;
-      // Cancel any outgoing refetches so they don't overwrite our optimistic update.
-      await trpcUtils.rooms.getRoomData.cancel();
-
-      // Snapshot of the previous value
-      const previousRoomData = trpcUtils.rooms.getRoomData.getData({
-        roomId: room?.id,
-      });
-
-      // Optimistically update to the new value
-      trpcUtils.rooms.getRoomData.setData({ roomId: room?.id }, (prev) => {
-        const optimisticRoomData: RoomData = {
-          ...room,
-          attempts: optimisticAttempts,
-          lastAttemptTimestamp: optimisticLastAttemptTimestamp,
-          currentWordGuess: optimisticCurrentWordGuess,
-        };
-        if (!prev) {
-          return optimisticRoomData;
+  const { mutate: editGame, isLoading: isEditingGame } =
+    api.rooms.updateRoom.useMutation({
+      onMutate: async ({ updateData }) => {
+        if (!room || !updateData.currentWordGuess) {
+          return;
         }
-        return optimisticRoomData;
-      });
-      return { previousRoomData };
-    },
-    onError: (err, updatedRoom, context) => {
-      toast.dismiss();
-      toast.error(err.message);
-      if (!room) {
+        const optimisticCurrentWordGuess = updateData.currentWordGuess || null;
+        const optimisticAttempts = updateData.attempts || null;
+        const optimisticLastAttemptTimestamp =
+          updateData.lastAttemptTimestamp || null;
+        // Cancel any outgoing refetches so they don't overwrite our optimistic update.
+        await trpcUtils.rooms.getRoomData.cancel();
+
+        // Snapshot of the previous value
+        const previousRoomData = trpcUtils.rooms.getRoomData.getData({
+          roomId: room?.id,
+        });
+
+        // Optimistically update to the new value
+        trpcUtils.rooms.getRoomData.setData({ roomId: room?.id }, (prev) => {
+          const optimisticRoomData: RoomData = {
+            ...room,
+            attempts: optimisticAttempts,
+            lastAttemptTimestamp: optimisticLastAttemptTimestamp,
+            currentWordGuess: optimisticCurrentWordGuess,
+          };
+          if (!prev) {
+            return optimisticRoomData;
+          }
+          return optimisticRoomData;
+        });
+        return { previousRoomData };
+      },
+      onError: (err, updatedRoom, context) => {
+        toast.dismiss();
+        toast.error(err.message);
+        if (!room) {
+          void trpcUtils.rooms.getRoomData.invalidate();
+          return;
+        }
+        trpcUtils.rooms.getRoomData.setData(
+          { roomId: room?.id },
+          () => context?.previousRoomData
+        );
+      },
+      onSettled: () => {
+        setGuessLetter("");
         void trpcUtils.rooms.getRoomData.invalidate();
-        return;
-      }
-      trpcUtils.rooms.getRoomData.setData(
-        { roomId: room?.id },
-        () => context?.previousRoomData
-      );
-    },
-    onSettled: () => {
-      void trpcUtils.rooms.getRoomData.invalidate();
-    },
-  });
+      },
+    });
 
   if (
     room &&
@@ -103,13 +102,13 @@ const Room = () => {
     room.wordToGuess &&
     room.currentWordGuess === room.wordToGuess
   ) {
-    void winGameHandler();
+    winGameHandler();
     return;
   }
 
-  async function winGameHandler() {
+  function winGameHandler() {
     if (!isEditingGame && room) {
-      await asyncEditGame({
+      editGame({
         id: room.id,
         updateData: {
           isGuessed: true,
@@ -120,7 +119,6 @@ const Room = () => {
           player2_ID: room.player1_ID,
         },
       });
-      setGuessLetter("");
     }
   }
 
@@ -145,16 +143,16 @@ const Room = () => {
     }
   }
 
-  async function sendLetter() {
+  function sendLetter() {
     if (!isEditingGame && room && guessLetter) {
       const currentGuessingWord = getGuessingWord() || null;
 
       if (currentGuessingWord && currentGuessingWord.indexOf("_") === -1) {
-        void winGameHandler();
+        winGameHandler();
         return;
       }
 
-      await asyncEditGame({
+      editGame({
         id: room.id,
         updateData: {
           attempts: room.attempts ? room.attempts + 1 : 1,
@@ -162,7 +160,6 @@ const Room = () => {
           currentWordGuess: currentGuessingWord || room.currentWordGuess,
         },
       });
-      setGuessLetter("");
     }
   }
 
@@ -336,8 +333,15 @@ export default Room;
 
 export const getServerSideProps: GetServerSideProps = async (context) => {
   const session = await getSession(context);
+  const roomId = context.params?.roomId;
+  if (typeof roomId !== "string") throw new Error("no room id");
+  const theRoom = await prisma.room.findUnique({
+    where: {
+      id: roomId,
+    },
+  });
 
-  if (!session) {
+  if (!session || !theRoom) {
     return {
       redirect: {
         destination: "/",
@@ -346,9 +350,13 @@ export const getServerSideProps: GetServerSideProps = async (context) => {
     };
   }
 
+  const isPlayerTwo =
+    theRoom.player2_ID && session.user?.id === theRoom.player2_ID;
+
   return {
     props: {
       session,
+      isPlayerTwo,
     },
   };
 };

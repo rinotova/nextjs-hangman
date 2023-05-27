@@ -107,9 +107,10 @@ const Room = () => {
           wordToGuess: "",
           currentWordGuess: "",
           attempts: 0,
-          player1_ID: userId,
+          player1_ID: room.player2_ID || "",
           player2_ID: room.player1_ID,
           usedLetters: [],
+          previousWord: room.wordToGuess || "",
         },
       });
     }
@@ -262,6 +263,11 @@ const Room = () => {
         <div className="flex w-full grow items-center justify-center bg-slate-200">
           {isPlayerOne && !room.wordToGuess && (
             <div className="flex flex-col items-center justify-center gap-4 text-white">
+              <div className="flex w-full justify-center">
+                <h1 className="font-butcher text-4xl tracking-[.3em] text-white">
+                  {room.previousWord}
+                </h1>
+              </div>
               <h1>You have won the game!</h1>
               <h1>Enter a new word to play again:</h1>
               <form

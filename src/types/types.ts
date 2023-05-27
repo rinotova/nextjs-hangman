@@ -21,5 +21,6 @@ export const RoomSchema = z.object({
     wordToGuess: z.string().optional(),
     currentWordGuess: z.string().optional().nullable(),
     usedLetters: z.string().array().optional(),
+    previousWord: z.string().optional(),
   }),
 });

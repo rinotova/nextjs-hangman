@@ -19,7 +19,6 @@ const Room = () => {
   const { roomId } = router.query;
   const theRoomId = roomId as string;
   const trpcUtils = api.useContext();
-
   const { data: room, isLoading: roomIsLoading } =
     api.rooms.getRoomData.useQuery(
       {
@@ -53,6 +52,7 @@ const Room = () => {
         if (!room || !updateData.currentWordGuess) {
           return;
         }
+
         const optimisticCurrentWordGuess = updateData.currentWordGuess || null;
         const optimisticAttempts = updateData.attempts || null;
         const optimisticLastAttemptTimestamp =
@@ -98,16 +98,6 @@ const Room = () => {
       },
     });
 
-  if (
-    room &&
-    room.currentWordGuess &&
-    room.wordToGuess &&
-    room.currentWordGuess === room.wordToGuess
-  ) {
-    winGameHandler();
-    return;
-  }
-
   function winGameHandler() {
     if (!isEditingGame && room) {
       editGame({
@@ -148,20 +138,41 @@ const Room = () => {
   }
 
   function sendLetter() {
-    if (!isEditingGame && room && guessLetter) {
+    if (!isEditingGame && room && room.wordToGuess && guessLetter) {
       const currentGuessingWord = getGuessingWord() || null;
 
-      if (currentGuessingWord && currentGuessingWord.indexOf("_") === -1) {
+      if (
+        room.wordToGuess.indexOf(guessLetter) !== -1 &&
+        currentGuessingWord &&
+        currentGuessingWord.indexOf("_") === -1
+      ) {
+        console.log("Winning A");
         winGameHandler();
         return;
       }
 
+      if (room.usedLetters.indexOf(guessLetter) !== -1) {
+        toast.dismiss();
+        toast.success("Letter already used!");
+        return;
+      }
+
+      const currentAttempts = room.attempts || 1;
+
+      const theCurrentWord =
+        room.wordToGuess?.indexOf(guessLetter) === -1
+          ? room.currentWordGuess
+          : currentGuessingWord;
+
       editGame({
         id: room.id,
         updateData: {
-          attempts: room.attempts ? room.attempts + 1 : 1,
+          attempts:
+            room.wordToGuess.indexOf(guessLetter) !== -1
+              ? currentAttempts + 1
+              : currentAttempts,
           lastAttemptTimestamp: new Date().getTime(),
-          currentWordGuess: currentGuessingWord || room.currentWordGuess,
+          currentWordGuess: theCurrentWord,
           usedLetters:
             room.usedLetters.indexOf(guessLetter) === -1
               ? [...room.usedLetters, guessLetter]
@@ -186,18 +197,10 @@ const Room = () => {
       return;
     }
 
-    if (room.usedLetters.indexOf(guessLetter) !== -1) {
-      toast.dismiss();
-      toast.success("Letter already used!");
-      return;
-    }
     const indices = getIndicesOf(guessLetter, theGuessingWord);
     console.log(indices);
     console.log("The guessing word: ", theGuessingWord);
 
-    if (indices.length === 0) {
-      return;
-    }
     for (let j = 0; j < indices.length; j++) {
       theGuessingWord = setCharAt(
         room.currentWordGuess,
@@ -240,7 +243,7 @@ const Room = () => {
     return <div />;
   }
 
-  const isPlayerOne = room && userId && userId === room.player1_ID;
+  const isPlayerOne = userId === room.player1_ID;
 
   return (
     <>
@@ -296,7 +299,7 @@ const Room = () => {
           </h1>
         </div>
 
-        {!isPlayerOne && (
+        {!isPlayerOne && room.wordToGuess && (
           <form
             className="mb-3 flex w-full items-center justify-center gap-3"
             onSubmit={sendGuessLetterHandler}

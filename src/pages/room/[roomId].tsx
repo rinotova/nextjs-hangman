@@ -296,8 +296,13 @@ const Room = () => {
 
           {!isPlayerOne && !room.wordToGuess && (
             <div className="flex flex-col items-center justify-center gap-4">
+              <div className="flex w-full justify-center">
+                <h1 className="font-butcher text-4xl tracking-[.3em] text-white">
+                  {room.previousWord}
+                </h1>
+              </div>
               <h1>The word has been guessed!</h1>
-              <h1>Waiting for the other player to enter a new word</h1>
+              <h1>Waiting for the other player to enter a new word...</h1>
               <LoadingSpinner size={48} />
             </div>
           )}

@@ -193,7 +193,7 @@ const Room = () => {
       return;
     }
     let theGuessingWord = room.wordToGuess;
-
+    let currentWordGuess = room.currentWordGuess;
     if (!theGuessingWord) {
       return;
     }
@@ -204,10 +204,11 @@ const Room = () => {
 
     for (let j = 0; j < indices.length; j++) {
       theGuessingWord = setCharAt(
-        room.currentWordGuess,
+        currentWordGuess,
         Number(indices[j]),
         guessLetter
       );
+      currentWordGuess = theGuessingWord;
     }
     console.log(theGuessingWord);
     return theGuessingWord;

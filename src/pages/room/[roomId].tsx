@@ -1,7 +1,7 @@
 import { type GetServerSideProps } from "next";
 import { getSession, useSession } from "next-auth/react";
 import { useRouter } from "next/router";
-import { type FormEvent, useRef, useState } from "react";
+import { type FormEvent, useRef, useState, useEffect } from "react";
 import { toast } from "react-hot-toast";
 import BirdsContainer from "~/components/BirdsContainer";
 import Button from "~/components/Button";
@@ -12,6 +12,7 @@ import { api } from "~/utils/api";
 
 const Room = () => {
   const newWordRef = useRef<HTMLInputElement>(null);
+  const letterRef = useRef<HTMLInputElement>(null);
   const [guessLetter, setGuessLetter] = useState("");
   const { data: session } = useSession();
   const userId = session?.user?.id;
@@ -19,6 +20,11 @@ const Room = () => {
   const { roomId } = router.query;
   const theRoomId = roomId as string;
   const trpcUtils = api.useContext();
+
+  useEffect(() => {
+    letterRef.current?.focus();
+  }, [guessLetter]);
+
   const { data: room, isLoading: roomIsLoading } =
     api.rooms.getRoomData.useQuery(
       {
@@ -138,7 +144,8 @@ const Room = () => {
     }
   }
 
-  function sendLetter() {
+  function sendGuessLetterHandler(e: FormEvent) {
+    e.preventDefault();
     if (!isEditingGame && room && room.wordToGuess && guessLetter) {
       const currentGuessingWord = getGuessingWord() || null;
 
@@ -155,10 +162,11 @@ const Room = () => {
       if (room.usedLetters.indexOf(guessLetter) !== -1) {
         toast.dismiss();
         toast.success("Letter already used!");
+        setGuessLetter("");
         return;
       }
 
-      const currentAttempts = room.attempts || 1;
+      const currentAttempts = room.attempts || 0;
 
       const theCurrentWord =
         room.wordToGuess?.indexOf(guessLetter) === -1
@@ -169,9 +177,9 @@ const Room = () => {
         id: room.id,
         updateData: {
           attempts:
-            room.wordToGuess.indexOf(guessLetter) !== -1
+            room.wordToGuess.indexOf(guessLetter) === -1
               ? currentAttempts + 1
-              : currentAttempts,
+              : room.attempts || undefined,
           lastAttemptTimestamp: new Date().getTime(),
           currentWordGuess: theCurrentWord,
           usedLetters:
@@ -181,11 +189,6 @@ const Room = () => {
         },
       });
     }
-  }
-
-  function sendGuessLetterHandler(e: FormEvent) {
-    e.preventDefault();
-    void sendLetter();
   }
 
   function getGuessingWord() {
@@ -312,6 +315,7 @@ const Room = () => {
             onSubmit={sendGuessLetterHandler}
           >
             <input
+              ref={letterRef}
               type="text"
               onChange={(e) => setGuessLetter(e.target.value.toUpperCase())}
               value={guessLetter}

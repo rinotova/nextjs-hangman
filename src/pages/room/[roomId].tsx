@@ -104,7 +104,7 @@ const Room = () => {
       },
     });
 
-  function winGameHandler() {
+  function editGameHandler() {
     if (!isEditingGame && room) {
       editGame({
         id: room.id,
@@ -112,9 +112,7 @@ const Room = () => {
           isGuessed: true,
           wordToGuess: "",
           currentWordGuess: "",
-          attempts: 0,
-          player1_ID: room.player2_ID || "",
-          player2_ID: room.player1_ID,
+
           usedLetters: [],
           previousWord: room.wordToGuess || "",
         },
@@ -136,9 +134,12 @@ const Room = () => {
         id: room.id,
         updateData: {
           isGuessed: false,
-          wordToGuess: newWord,
+          wordToGuess: newWord.toUpperCase(),
           currentWordGuess: "_".repeat(newWord.length),
           usedLetters: [],
+          attempts: 0,
+          player1_ID: room.player2_ID || "",
+          player2_ID: room.player1_ID,
         },
       });
     }
@@ -155,7 +156,7 @@ const Room = () => {
         currentGuessingWord.indexOf("_") === -1
       ) {
         console.log("Winning A");
-        winGameHandler();
+        editGameHandler();
         return;
       }
 
@@ -244,11 +245,13 @@ const Room = () => {
     return;
   }
 
-  if (!room || roomIsLoading || !users || isUsersLoading) {
+  if (!room || roomIsLoading || !users || isUsersLoading || !userId) {
     return <div />;
   }
 
   const isPlayerOne = userId === room.player1_ID;
+  const playerHasLost =
+    room.attempts !== null && room.attempts > 6 && userId === room.player2_ID;
 
   return (
     <>
@@ -264,15 +267,20 @@ const Room = () => {
           </div>
         )}
 
-        <div className="flex w-full grow items-center justify-center bg-slate-200">
-          {isPlayerOne && !room.wordToGuess && (
+        <div className="flex w-full grow items-center justify-center bg-slate-700">
+          {(isPlayerOne && !room.wordToGuess) || playerHasLost ? (
             <div className="flex flex-col items-center justify-center gap-4 text-white">
               <div className="flex w-full justify-center">
                 <h1 className="font-butcher text-4xl tracking-[.3em] text-white">
                   {room.previousWord}
                 </h1>
               </div>
-              <h1>You have won the game!</h1>
+              {playerHasLost ? (
+                <h1>You have lost the game!</h1>
+              ) : (
+                <h1>You have won the game!</h1>
+              )}
+
               <h1>Enter a new word to play again:</h1>
               <form
                 className="flex w-full items-center justify-center gap-3"
@@ -292,7 +300,7 @@ const Room = () => {
                 </Button>
               </form>
             </div>
-          )}
+          ) : null}
 
           {!isPlayerOne && !room.wordToGuess && (
             <div className="flex flex-col items-center justify-center gap-4">
@@ -308,13 +316,15 @@ const Room = () => {
           )}
         </div>
 
-        <div className="flex w-full justify-center">
-          <h1 className="font-butcher text-4xl tracking-[.3em] text-white">
-            {room.currentWordGuess}
-          </h1>
-        </div>
+        {!playerHasLost && (
+          <div className="flex w-full justify-center">
+            <h1 className="font-butcher text-4xl tracking-[.3em] text-white">
+              {room.currentWordGuess}
+            </h1>
+          </div>
+        )}
 
-        {!isPlayerOne && room.wordToGuess && (
+        {!isPlayerOne && room.wordToGuess && !playerHasLost && (
           <form
             className="mb-3 flex w-full items-center justify-center gap-3"
             onSubmit={sendGuessLetterHandler}

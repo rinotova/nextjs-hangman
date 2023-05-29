@@ -61,8 +61,7 @@ const Room = () => {
 
         const optimisticCurrentWordGuess = updateData.currentWordGuess || null;
         const optimisticAttempts = updateData.attempts || null;
-        const optimisticLastAttemptTimestamp =
-          updateData.lastAttemptTimestamp || null;
+
         // Cancel any outgoing refetches so they don't overwrite our optimistic update.
         await trpcUtils.rooms.getRoomData.cancel();
 
@@ -76,7 +75,6 @@ const Room = () => {
           const optimisticRoomData: RoomData = {
             ...room,
             attempts: optimisticAttempts,
-            lastAttemptTimestamp: optimisticLastAttemptTimestamp,
             currentWordGuess: optimisticCurrentWordGuess,
           };
           if (!prev) {
@@ -181,7 +179,6 @@ const Room = () => {
             room.wordToGuess.indexOf(guessLetter) === -1
               ? currentAttempts + 1
               : room.attempts || undefined,
-          lastAttemptTimestamp: new Date().getTime(),
           currentWordGuess: theCurrentWord,
           usedLetters:
             room.usedLetters.indexOf(guessLetter) === -1

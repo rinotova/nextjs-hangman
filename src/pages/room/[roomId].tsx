@@ -5,6 +5,7 @@ import { type FormEvent, useRef, useState, useEffect } from "react";
 import { toast } from "react-hot-toast";
 import BirdsContainer from "~/components/BirdsContainer";
 import Button from "~/components/Button";
+import { HangmanDrawing } from "~/components/HangmanDrawing";
 import Headline from "~/components/Headline";
 import { LoadingSpinner } from "~/components/Spinner";
 import { type RoomData } from "~/types/types";
@@ -102,7 +103,7 @@ const Room = () => {
       },
     });
 
-  function editGameHandler() {
+  function endGame() {
     if (!isEditingGame && room) {
       editGame({
         id: room.id,
@@ -110,7 +111,6 @@ const Room = () => {
           isGuessed: true,
           wordToGuess: "",
           currentWordGuess: "",
-
           usedLetters: [],
           previousWord: room.wordToGuess || "",
         },
@@ -153,8 +153,7 @@ const Room = () => {
         currentGuessingWord &&
         currentGuessingWord.indexOf("_") === -1
       ) {
-        console.log("Winning A");
-        editGameHandler();
+        endGame();
         return;
       }
 
@@ -248,7 +247,7 @@ const Room = () => {
 
   const isPlayerOne = userId === room.player1_ID;
   const playerHasLost =
-    room.attempts !== null && room.attempts > 6 && userId === room.player2_ID;
+    room.attempts !== null && room.attempts > 5 && userId === room.player2_ID;
 
   return (
     <>
@@ -258,18 +257,19 @@ const Room = () => {
       <div className="mt-12 flex min-h-[calc(100vh-1rem-120px)] w-full flex-col justify-between gap-6">
         {users?.playerOneUsername && (
           <div className="-mt-5 flex w-full">
-            <span className="mr-2 rounded bg-red-900 px-2.5 py-0.5 text-sm font-medium text-red-300">
+            <span className="rounded bg-red-900 px-2.5 py-0.5 text-sm font-medium text-red-300">
               {users.playerOneUsername}
             </span>
           </div>
         )}
 
-        <div className="flex w-full grow items-center justify-center bg-slate-700">
+        <div className="flex w-full grow items-center justify-center rounded-lg border border-slate-600 font-roboto">
+          <HangmanDrawing numberOfGuesses={room.attempts || 0} />
           {(isPlayerOne && !room.wordToGuess) || playerHasLost ? (
             <div className="flex flex-col items-center justify-center gap-4 text-white">
               <div className="flex w-full justify-center">
-                <h1 className="font-butcher text-4xl tracking-[.3em] text-white">
-                  {room.previousWord}
+                <h1 className=" text-4xl tracking-[.3em] text-white">
+                  {playerHasLost ? room.wordToGuess : room.previousWord}
                 </h1>
               </div>
               {playerHasLost ? (
@@ -345,8 +345,8 @@ const Room = () => {
         )}
 
         {users?.playerTwoUsername && (
-          <div className="-mt-5 flex w-full justify-end">
-            <span className="mr-2 rounded bg-green-900 px-2.5 py-0.5 text-sm font-medium text-green-300">
+          <div className="flex w-full justify-end">
+            <span className="rounded bg-green-900 px-2.5 py-0.5 text-sm font-medium text-green-300">
               {users.playerTwoUsername}
             </span>
           </div>

@@ -6,6 +6,7 @@ export default {
     extend: {
       fontFamily: {
         butcher: ["var(--butcher-font)", "sans-serif"],
+        roboto: ["var(--roboto-font)", "sans-serif"],
       },
     },
   },

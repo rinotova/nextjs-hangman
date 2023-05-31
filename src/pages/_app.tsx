@@ -1,6 +1,6 @@
 import { type AppType } from "next/app";
 import { type Session } from "next-auth";
-import { Butcherman } from "next/font/google";
+import { Butcherman, Roboto } from "next/font/google";
 import { SessionProvider } from "next-auth/react";
 
 import { api } from "~/utils/api";
@@ -15,7 +15,12 @@ const butcher = Butcherman({
   display: "swap",
   preload: true,
 });
-
+const roboto = Roboto({
+  weight: "400",
+  subsets: ["latin"],
+  display: "swap",
+  preload: true,
+});
 const MyApp: AppType<{ session: Session | null }> = ({
   Component,
   pageProps: { session, ...pageProps },
@@ -26,6 +31,7 @@ const MyApp: AppType<{ session: Session | null }> = ({
         {`
           :root {
             --butcher-font: ${butcher.style.fontFamily};
+            --roboto-font: ${roboto.style.fontFamily};
           }
         `}
       </style>

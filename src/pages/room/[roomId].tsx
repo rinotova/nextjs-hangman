@@ -277,9 +277,8 @@ const Room = () => {
           </div>
         )}
 
-        <div className="flex w-full grow flex-col items-center justify-between rounded-lg border border-slate-600 font-roboto text-white">
+        <div className="flex w-full grow flex-col items-center justify-between rounded-lg border border-slate-600 p-4 font-roboto text-white">
           <HangmanDrawing numberOfGuesses={room.attempts || 0} />
-
           {gameHasEnded && isPlayerTwo ? (
             <div className="flex flex-col items-center justify-center gap-4 ">
               <div className="flex w-full justify-center">
@@ -315,15 +314,25 @@ const Room = () => {
           ) : null}
 
           {gameHasEnded && isPlayerOne && (
-            <div className="flex flex-col items-center justify-center gap-4">
+            <div className="mt-2 flex flex-col items-center justify-center gap-4">
               <div className="flex w-full justify-center">
                 <h1 className="font-butcher text-4xl tracking-[.3em] text-white">
-                  {room.previousWord}
+                  {room.wordToGuess}
                 </h1>
               </div>
-              <h1>The word has been guessed!</h1>
-              <h1>Waiting for the other player to enter a new word...</h1>
-              <LoadingSpinner size={48} />
+              {playerHasLost ? (
+                <h1>You have lost the game!</h1>
+              ) : (
+                <h1>You have won the game!</h1>
+              )}
+              <div className=" flex w-full justify-end">
+                <span className="mr-2 rounded bg-green-900 px-2.5 py-0.5 text-sm font-medium text-green-300">
+                  <div className="flex gap-3">
+                    Waiting for a new word
+                    <LoadingSpinner />
+                  </div>
+                </span>
+              </div>
             </div>
           )}
         </div>

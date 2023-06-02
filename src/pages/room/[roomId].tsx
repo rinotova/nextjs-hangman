@@ -282,14 +282,22 @@ const Room = () => {
           {gameHasEnded && isPlayerTwo ? (
             <div className="flex flex-col items-center justify-center gap-4 ">
               <div className="flex w-full justify-center">
-                <h1 className=" text-4xl tracking-[.3em] text-white">
+                <h1 className="font-butcher text-4xl tracking-[.3em] text-white">
                   {playerHasLost ? room.wordToGuess : room.previousWord}
                 </h1>
               </div>
               {playerHasLost ? (
-                <h1>You have lost the game!</h1>
+                <div className=" flex w-full items-center justify-center">
+                  <span className="rounded bg-red-900 px-2.5 py-0.5 text-sm font-medium text-red-300">
+                    You have lost the game!
+                  </span>
+                </div>
               ) : (
-                <h1>You have won the game!</h1>
+                <div className=" flex w-full items-center justify-center">
+                  <span className="mr-2 rounded bg-green-900 px-2.5 py-0.5 text-sm font-medium text-green-300">
+                    <div className="flex gap-3">You have won the game!</div>
+                  </span>
+                </div>
               )}
 
               <h1>Enter a new word to play again:</h1>
@@ -317,7 +325,7 @@ const Room = () => {
             <div className="mt-2 flex flex-col items-center justify-center gap-4">
               <div className="flex w-full justify-center">
                 <h1 className="font-butcher text-4xl tracking-[.3em] text-white">
-                  {room.wordToGuess}
+                  {room.previousWord || room.wordToGuess}
                 </h1>
               </div>
               {playerHasLost ? (
@@ -325,7 +333,7 @@ const Room = () => {
               ) : (
                 <h1>You have won the game!</h1>
               )}
-              <div className=" flex w-full justify-end">
+              <div className=" flex w-full items-center justify-center">
                 <span className="mr-2 rounded bg-green-900 px-2.5 py-0.5 text-sm font-medium text-green-300">
                   <div className="flex gap-3">
                     Waiting for a new word

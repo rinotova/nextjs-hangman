@@ -246,9 +246,23 @@ const Room = () => {
   }
 
   const isPlayerOne = userId === room.player1_ID;
-  const playerHasLost =
-    room.attempts !== null && room.attempts > 5 && userId === room.player2_ID;
+  const isPlayerTwo = userId === room.player2_ID;
+  let playerHasLost;
+  let playerHasWon;
 
+  if (isPlayerOne) {
+    playerHasLost = !!room.isGuessed;
+    playerHasWon = room.attempts !== null && room.attempts > 5;
+  }
+
+  if (isPlayerTwo) {
+    playerHasLost = room.attempts !== null && room.attempts > 5;
+    playerHasWon = !!room.isGuessed;
+  }
+  const gameHasEnded = playerHasLost || playerHasWon;
+
+  console.log("playerHasLost: ", playerHasLost);
+  console.log("playerHasWon: ", playerHasWon);
   return (
     <>
       <BirdsContainer />
@@ -263,10 +277,11 @@ const Room = () => {
           </div>
         )}
 
-        <div className="flex w-full grow items-center justify-center rounded-lg border border-slate-600 font-roboto">
+        <div className="flex w-full grow flex-col items-center justify-between rounded-lg border border-slate-600 font-roboto text-white">
           <HangmanDrawing numberOfGuesses={room.attempts || 0} />
-          {(isPlayerOne && !room.wordToGuess) || playerHasLost ? (
-            <div className="flex flex-col items-center justify-center gap-4 text-white">
+
+          {gameHasEnded && isPlayerTwo ? (
+            <div className="flex flex-col items-center justify-center gap-4 ">
               <div className="flex w-full justify-center">
                 <h1 className=" text-4xl tracking-[.3em] text-white">
                   {playerHasLost ? room.wordToGuess : room.previousWord}
@@ -299,7 +314,7 @@ const Room = () => {
             </div>
           ) : null}
 
-          {!isPlayerOne && !room.wordToGuess && (
+          {gameHasEnded && isPlayerOne && (
             <div className="flex flex-col items-center justify-center gap-4">
               <div className="flex w-full justify-center">
                 <h1 className="font-butcher text-4xl tracking-[.3em] text-white">

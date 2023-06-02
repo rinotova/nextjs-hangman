@@ -20,4 +20,4 @@ Stack:
 
 ## Demo
 
-[Business card generator](https://nextjs-hangman-lac.vercel.app/)
+[Hangman - The game](https://nextjs-hangman-lac.vercel.app/)

@@ -199,8 +199,6 @@ const Room = () => {
     }
 
     const indices = getIndicesOf(guessLetter, theGuessingWord);
-    console.log(indices);
-    console.log("The guessing word: ", theGuessingWord);
 
     for (let j = 0; j < indices.length; j++) {
       theGuessingWord = setCharAt(
@@ -210,7 +208,6 @@ const Room = () => {
       );
       currentWordGuess = theGuessingWord;
     }
-    console.log(theGuessingWord);
     return theGuessingWord;
   }
 
@@ -247,22 +244,23 @@ const Room = () => {
 
   const isPlayerOne = userId === room.player1_ID;
   const isPlayerTwo = userId === room.player2_ID;
+  const ATTEMPETS_THRESHOLD = 9;
   let playerHasLost;
   let playerHasWon;
 
   if (isPlayerOne) {
     playerHasLost = !!room.isGuessed;
-    playerHasWon = room.attempts !== null && room.attempts > 5;
+    playerHasWon =
+      room.attempts !== null && room.attempts > ATTEMPETS_THRESHOLD;
   }
 
   if (isPlayerTwo) {
-    playerHasLost = room.attempts !== null && room.attempts > 5;
+    playerHasLost =
+      room.attempts !== null && room.attempts > ATTEMPETS_THRESHOLD;
     playerHasWon = !!room.isGuessed;
   }
   const gameHasEnded = playerHasLost || playerHasWon;
 
-  console.log("playerHasLost: ", playerHasLost);
-  console.log("playerHasWon: ", playerHasWon);
   return (
     <>
       <BirdsContainer />
@@ -308,7 +306,7 @@ const Room = () => {
                 <input
                   ref={newWordRef}
                   type="text"
-                  className="block h-12 w-full rounded-lg border border-gray-600 bg-gray-700 p-2 text-center font-butcher text-2xl text-white placeholder-gray-400 focus:border-blue-500 focus:ring-blue-500"
+                  className="block h-12 w-full rounded-lg border border-gray-600 bg-gray-700 p-2 text-center font-roboto text-2xl text-white placeholder-gray-400 focus:border-blue-500 focus:ring-blue-500"
                   placeholder="Type a word..."
                   required
                   disabled={isEditingGame}
@@ -325,7 +323,7 @@ const Room = () => {
             <div className="mt-2 flex flex-col items-center justify-center gap-4">
               <div className="flex w-full justify-center">
                 <h1 className="font-butcher text-4xl tracking-[.3em] text-white">
-                  {room.previousWord || room.wordToGuess}
+                  {room.previousWord}
                 </h1>
               </div>
               {playerHasLost ? (
@@ -343,11 +341,26 @@ const Room = () => {
               </div>
             </div>
           )}
+
+          {!gameHasEnded && (
+            <div className="flex w-full items-center justify-center overflow-x-auto overflow-y-hidden">
+              {room.usedLetters.reverse().map((usedLetter) => {
+                return (
+                  <div
+                    className="mr-2 rounded-lg border border-slate-600 p-1 text-xl text-slate-300"
+                    key={usedLetter}
+                  >
+                    {usedLetter}
+                  </div>
+                );
+              })}
+            </div>
+          )}
         </div>
 
         {!playerHasLost && (
           <div className="flex w-full justify-center">
-            <h1 className="font-butcher text-4xl tracking-[.3em] text-white">
+            <h1 className="font-roboto text-4xl tracking-[.3em] text-white">
               {room.currentWordGuess}
             </h1>
           </div>
@@ -363,7 +376,7 @@ const Room = () => {
               type="text"
               onChange={(e) => setGuessLetter(e.target.value.toUpperCase())}
               value={guessLetter}
-              className="block h-12 w-32 rounded-lg border border-gray-600 bg-gray-700 p-2 text-center font-butcher text-2xl text-white placeholder-gray-400 focus:border-blue-500 focus:ring-blue-500"
+              className="block h-12 w-32 rounded-lg border border-gray-600 bg-gray-700 p-2 text-center font-roboto text-2xl text-white placeholder-gray-400 focus:border-blue-500 focus:ring-blue-500"
               placeholder="Type..."
               required
               minLength={1}

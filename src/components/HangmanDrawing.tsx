@@ -91,7 +91,57 @@ const LEFT_LEG = (
   />
 );
 
-const BODY_PARTS = [HEAD, BODY, RIGHT_ARM, LEFT_ARM, RIGHT_LEG, LEFT_LEG];
+const FLOOR = (
+  <div style={{ height: "10px", width: "250px", background: "white" }} />
+);
+
+const POLE = (
+  <div
+    style={{
+      height: "350px",
+      width: "10px",
+      background: "white",
+      marginLeft: "20px",
+    }}
+  />
+);
+
+const ROOF = (
+  <div
+    style={{
+      height: "10px",
+      width: "100px",
+      background: "white",
+      marginLeft: "20px",
+    }}
+  />
+);
+
+const HANG = (
+  <div
+    style={{
+      height: "50px",
+      width: "10px",
+      background: "white",
+      position: "absolute",
+      top: 0,
+      left: "118px",
+    }}
+  />
+);
+
+const HANGMAN_DRAWING = [
+  ROOF,
+  POLE,
+  FLOOR,
+  HANG,
+  HEAD,
+  BODY,
+  RIGHT_ARM,
+  LEFT_ARM,
+  RIGHT_LEG,
+  LEFT_LEG,
+];
 
 type HangmanDrawingProps = {
   numberOfGuesses: number;
@@ -100,34 +150,7 @@ type HangmanDrawingProps = {
 export function HangmanDrawing({ numberOfGuesses }: HangmanDrawingProps) {
   return (
     <div style={{ position: "relative" }}>
-      {BODY_PARTS.slice(0, numberOfGuesses)}
-      <div
-        style={{
-          height: "50px",
-          width: "10px",
-          background: "white",
-          position: "absolute",
-          top: 0,
-          left: "118px",
-        }}
-      />
-      <div
-        style={{
-          height: "10px",
-          width: "100px",
-          background: "white",
-          marginLeft: "20px",
-        }}
-      />
-      <div
-        style={{
-          height: "350px",
-          width: "10px",
-          background: "white",
-          marginLeft: "20px",
-        }}
-      />
-      <div style={{ height: "10px", width: "250px", background: "white" }} />
+      {HANGMAN_DRAWING.slice(0, numberOfGuesses)}
     </div>
   );
 }

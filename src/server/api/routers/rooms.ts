@@ -26,24 +26,37 @@ export const roomsRouter = createTRPCRouter({
   getAllRooms: protectedProcedure.query(
     async ({ ctx: { prisma, session } }) => {
       const rooms = await prisma.room.findMany({
-        include: {
-          user: true,
-        },
         orderBy: [{ createdAt: "desc" }],
       });
 
+      const getUserNameForRoom = async (userID: string) => {
+        const user = await prisma.user.findUnique({
+          where: {
+            id: userID,
+          },
+        });
+        if (!user) {
+          return "";
+        }
+        return user.userName || "";
+      };
+
       const userId = session.user.id;
 
-      return rooms.map((room) => ({
-        username: room.user.userName,
-        id: room.id,
-        canJoin:
-          !room.player2_ID ||
-          room.player1_ID === userId ||
-          room.player2_ID === userId,
-        player1_ID: room.player1_ID,
-        player2_ID: room.player2_ID,
-      }));
+      const mappedRooms = await Promise.all(
+        rooms.map(async (room) => ({
+          username: await getUserNameForRoom(room.player1_ID),
+          id: room.id,
+          canJoin:
+            !room.player2_ID ||
+            room.player1_ID === userId ||
+            room.player2_ID === userId,
+          player1_ID: room.player1_ID,
+          player2_ID: room.player2_ID,
+        }))
+      );
+
+      return mappedRooms;
     }
   ),
   updateRoom: protectedProcedure

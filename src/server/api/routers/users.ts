@@ -11,7 +11,6 @@ export const usersRouter = createTRPCRouter({
       })
     )
     .query(async ({ ctx, input }) => {
-      console.log("Fetching user///");
       const { prisma } = ctx;
       const { playerOneId, playerTwoId } = input;
 

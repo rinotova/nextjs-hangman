@@ -37,6 +37,59 @@ const Room = () => {
       }
     );
 
+  const {
+    mutate: editGame,
+    mutateAsync: asyncEditGame,
+    isLoading: isEditingGame,
+  } = api.rooms.updateRoom.useMutation({
+    onMutate: async ({ updateData }) => {
+      if (!room || !updateData.currentWordGuess) {
+        return;
+      }
+
+      const optimisticCurrentWordGuess = updateData.currentWordGuess || null;
+      const optimisticAttempts = updateData.attempts || null;
+
+      // Cancel any outgoing refetches so they don't overwrite our optimistic update.
+      await trpcUtils.rooms.getRoomData.cancel();
+
+      // Snapshot of the previous value
+      const previousRoomData = trpcUtils.rooms.getRoomData.getData({
+        roomId: room?.id,
+      });
+
+      // Optimistically update to the new value
+      trpcUtils.rooms.getRoomData.setData({ roomId: room?.id }, (prev) => {
+        const optimisticRoomData: RoomData = {
+          ...room,
+          attempts: optimisticAttempts,
+          currentWordGuess: optimisticCurrentWordGuess,
+        };
+        if (!prev) {
+          return optimisticRoomData;
+        }
+        return optimisticRoomData;
+      });
+      return { previousRoomData };
+    },
+    onError: (err, updatedRoom, context) => {
+      toast.dismiss();
+      toast.error(err.message);
+      if (!room) {
+        void trpcUtils.rooms.getRoomData.invalidate();
+        return;
+      }
+      trpcUtils.rooms.getRoomData.setData(
+        { roomId: room?.id },
+        () => context?.previousRoomData
+      );
+    },
+    onSettled: () => {
+      setGuessLetter("");
+      void trpcUtils.rooms.getRoomData.invalidate();
+    },
+  });
+
   const { data: users, isLoading: isUsersLoading } =
     api.users.getUsernamesForRoom.useQuery(
       {
@@ -44,7 +97,7 @@ const Room = () => {
         playerTwoId: room?.player2_ID,
       },
       {
-        enabled: !!room,
+        enabled: !!room && !isEditingGame,
         refetchOnWindowFocus: false,
         refetchInterval:
           userId && room && room.player1_ID === userId && !room.player2_ID
@@ -53,65 +106,16 @@ const Room = () => {
       }
     );
 
-  const { mutate: editGame, isLoading: isEditingGame } =
-    api.rooms.updateRoom.useMutation({
-      onMutate: async ({ updateData }) => {
-        if (!room || !updateData.currentWordGuess) {
-          return;
-        }
-
-        const optimisticCurrentWordGuess = updateData.currentWordGuess || null;
-        const optimisticAttempts = updateData.attempts || null;
-
-        // Cancel any outgoing refetches so they don't overwrite our optimistic update.
-        await trpcUtils.rooms.getRoomData.cancel();
-
-        // Snapshot of the previous value
-        const previousRoomData = trpcUtils.rooms.getRoomData.getData({
-          roomId: room?.id,
-        });
-
-        // Optimistically update to the new value
-        trpcUtils.rooms.getRoomData.setData({ roomId: room?.id }, (prev) => {
-          const optimisticRoomData: RoomData = {
-            ...room,
-            attempts: optimisticAttempts,
-            currentWordGuess: optimisticCurrentWordGuess,
-          };
-          if (!prev) {
-            return optimisticRoomData;
-          }
-          return optimisticRoomData;
-        });
-        return { previousRoomData };
-      },
-      onError: (err, updatedRoom, context) => {
-        toast.dismiss();
-        toast.error(err.message);
-        if (!room) {
-          void trpcUtils.rooms.getRoomData.invalidate();
-          return;
-        }
-        trpcUtils.rooms.getRoomData.setData(
-          { roomId: room?.id },
-          () => context?.previousRoomData
-        );
-      },
-      onSettled: () => {
-        setGuessLetter("");
-        void trpcUtils.rooms.getRoomData.invalidate();
-      },
-    });
-
-  function endGame() {
+  async function endGame(won: boolean) {
     if (!isEditingGame && room) {
-      editGame({
+      await asyncEditGame({
         id: room.id,
         updateData: {
-          isGuessed: true,
+          isGuessed: !won,
           wordToGuess: "",
           currentWordGuess: "",
           usedLetters: [],
+          attempts: !won ? room.attempts || 0 : (room.attempts || 0) + 1,
           previousWord: room.wordToGuess || "",
         },
       });
@@ -143,17 +147,26 @@ const Room = () => {
     }
   }
 
-  function sendGuessLetterHandler(e: FormEvent) {
+  const ATTEMPETS_THRESHOLD = 10;
+
+  async function sendGuessLetterHandler(e: FormEvent) {
     e.preventDefault();
     if (!isEditingGame && room && room.wordToGuess && guessLetter) {
       const currentGuessingWord = getGuessingWord() || null;
+      const currentAttempts = room.attempts || 0;
+      const attempts =
+        room.wordToGuess.indexOf(guessLetter) === -1
+          ? currentAttempts + 1
+          : room.attempts || undefined;
 
       if (
-        room.wordToGuess.indexOf(guessLetter) !== -1 &&
-        currentGuessingWord &&
-        currentGuessingWord.indexOf("_") === -1
+        (attempts && attempts >= ATTEMPETS_THRESHOLD) ||
+        (room.wordToGuess.indexOf(guessLetter.toUpperCase()) !== -1 &&
+          currentGuessingWord &&
+          currentGuessingWord.indexOf("_") === -1)
       ) {
-        endGame();
+        const hasWon = room.wordToGuess.indexOf(guessLetter) === -1;
+        await endGame(hasWon);
         return;
       }
 
@@ -164,8 +177,6 @@ const Room = () => {
         return;
       }
 
-      const currentAttempts = room.attempts || 0;
-
       const theCurrentWord =
         room.wordToGuess?.indexOf(guessLetter) === -1
           ? room.currentWordGuess
@@ -174,10 +185,7 @@ const Room = () => {
       editGame({
         id: room.id,
         updateData: {
-          attempts:
-            room.wordToGuess.indexOf(guessLetter) === -1
-              ? currentAttempts + 1
-              : room.attempts || undefined,
+          attempts,
           currentWordGuess: theCurrentWord,
           usedLetters:
             room.usedLetters.indexOf(guessLetter) === -1
@@ -244,19 +252,19 @@ const Room = () => {
 
   const isPlayerOne = userId === room.player1_ID;
   const isPlayerTwo = userId === room.player2_ID;
-  const ATTEMPETS_THRESHOLD = 9;
+
   let playerHasLost;
   let playerHasWon;
 
   if (isPlayerOne) {
     playerHasLost = !!room.isGuessed;
     playerHasWon =
-      room.attempts !== null && room.attempts > ATTEMPETS_THRESHOLD;
+      room.attempts !== null && room.attempts >= ATTEMPETS_THRESHOLD;
   }
 
   if (isPlayerTwo) {
     playerHasLost =
-      room.attempts !== null && room.attempts > ATTEMPETS_THRESHOLD;
+      room.attempts !== null && room.attempts >= ATTEMPETS_THRESHOLD;
     playerHasWon = !!room.isGuessed;
   }
   const gameHasEnded = playerHasLost || playerHasWon;
@@ -281,7 +289,7 @@ const Room = () => {
             <div className="flex flex-col items-center justify-center gap-4 ">
               <div className="flex w-full justify-center">
                 <h1 className="font-butcher text-4xl tracking-[.3em] text-white">
-                  {playerHasLost ? room.wordToGuess : room.previousWord}
+                  {room.previousWord}
                 </h1>
               </div>
               {playerHasLost ? (
@@ -343,8 +351,8 @@ const Room = () => {
           )}
 
           {!gameHasEnded && (
-            <div className="flex w-full items-center justify-center overflow-x-auto overflow-y-hidden">
-              {room.usedLetters.reverse().map((usedLetter) => {
+            <div className="mt-2 flex w-full items-center justify-center overflow-x-auto overflow-y-hidden">
+              {room.usedLetters.map((usedLetter) => {
                 return (
                   <div
                     className="mr-2 rounded-lg border border-slate-600 p-1 text-xl text-slate-300"
@@ -369,7 +377,7 @@ const Room = () => {
         {!isPlayerOne && room.wordToGuess && !playerHasLost && (
           <form
             className="mb-3 flex w-full items-center justify-center gap-3"
-            onSubmit={sendGuessLetterHandler}
+            onSubmit={(e) => void sendGuessLetterHandler(e)}
           >
             <input
               ref={letterRef}

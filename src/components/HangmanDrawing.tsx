@@ -92,11 +92,15 @@ const LEFT_LEG = (
 );
 
 const FLOOR = (
-  <div style={{ height: "10px", width: "250px", background: "white" }} />
+  <div
+    key={"floor"}
+    style={{ height: "10px", width: "250px", background: "white" }}
+  />
 );
 
 const POLE = (
   <div
+    key={"pole"}
     style={{
       height: "350px",
       width: "10px",
@@ -108,6 +112,7 @@ const POLE = (
 
 const ROOF = (
   <div
+    key={"roof"}
     style={{
       height: "10px",
       width: "100px",
@@ -119,6 +124,7 @@ const ROOF = (
 
 const HANG = (
   <div
+    key={"hang"}
     style={{
       height: "50px",
       width: "10px",

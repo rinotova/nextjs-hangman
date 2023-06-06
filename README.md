@@ -1,8 +1,12 @@
 # Multiplayer Hangman game
 
-This is a [T3 Stack](https://create.t3.gg/) project bootstrapped with `create-t3-app`.
+## Demo
 
-Stack:
+[Hangman - The game](https://nextjs-hangman-lac.vercel.app/)
+
+## Stack
+
+This is a [T3 Stack](https://create.t3.gg/) project bootstrapped with `create-t3-app`.
 
 - [Next.js](https://nextjs.org)
 - [NextAuth.js](https://next-auth.js.org)
@@ -17,7 +21,3 @@ Stack:
 - Add an .env file with the environment variables as in `.env.example`
 - Run `pnpm install`
 - Run `pnpm run dev`
-
-## Demo
-
-[Hangman - The game](https://nextjs-hangman-lac.vercel.app/)

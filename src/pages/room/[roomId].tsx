@@ -341,7 +341,7 @@ const Room = () => {
               )}
               <div className=" flex w-full items-center justify-center">
                 <span className="mr-2 rounded bg-green-900 px-2.5 py-0.5 text-sm font-medium text-green-300">
-                  <div className="flex gap-3">
+                  <div className="flex items-center gap-3">
                     Waiting for a new word
                     <LoadingSpinner />
                   </div>
@@ -409,7 +409,7 @@ const Room = () => {
           <>
             <div className="-mt-5 flex w-full justify-end">
               <span className="mr-2 rounded bg-green-900 px-2.5 py-0.5 text-sm font-medium text-green-300">
-                <div className="flex gap-3">
+                <div className="flex items-center gap-3">
                   Waiting for your next victim
                   <LoadingSpinner />
                 </div>

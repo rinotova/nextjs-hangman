@@ -102,7 +102,7 @@ const POLE = (
   <div
     key={"pole"}
     style={{
-      height: "350px",
+      height: "300px",
       width: "10px",
       background: "white",
       marginLeft: "20px",
